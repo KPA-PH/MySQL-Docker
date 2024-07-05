@@ -1,0 +1,23 @@
+
+networks:
+  mysqlnetwork:
+    driver: bridge
+
+services:
+  mysql:
+    image: mysql:8.0.35
+    container_name: mysql
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./mysql/data:/var/lib/mysql
+      - ./mysql/my.cnf:/etc/my.cnf
+    environment:
+      MYSQL_DATABASE: sca_db1
+      MYSQL_ROOT_PASSWORD: "@ABC12abc"
+      SERVICE_TAGS: kpa_db
+      SERVICE_NAME: mysql
+    networks:
+      - mysqlnetwork
