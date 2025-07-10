@@ -15,7 +15,7 @@ services:
       - ./mysql/data:/var/lib/mysql
       - ./mysql/my.cnf:/etc/my.cnf
     environment:
-      MYSQL_ROOT_PASSWORD: "@@@ABC12abc"
+      MYSQL_ROOT_PASSWORD: "@ABC12abc"
       SERVICE_TAGS: kpa_db
       SERVICE_NAME: mysql
     networks:
