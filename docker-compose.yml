@@ -1,12 +1,24 @@
 
-networks:
-  mysqlnetwork:
-    driver: bridge
-
 services:
-  mysql:
+
+  mysql84:
+    image: mysql:8.4
+    container_name: mysql84
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "33066:3306"
+    volumes:
+      - ./mysql/data-84:/var/lib/mysql
+      - ./mysql/my.cnf:/etc/my.cnf
+    environment:
+      MYSQL_ROOT_PASSWORD: "@@@ABC12abc"
+      SERVICE_TAGS: kpa_db84
+      SERVICE_NAME: mysql84
+
+  mysql80:
     image: mysql:8.0
-    container_name: mysql
+    container_name: mysql80
     restart: unless-stopped
     tty: true
     ports:
@@ -18,5 +30,3 @@ services:
       MYSQL_ROOT_PASSWORD: "@ABC12abc"
       SERVICE_TAGS: kpa_db
       SERVICE_NAME: mysql
-    networks:
-      - mysqlnetwork
