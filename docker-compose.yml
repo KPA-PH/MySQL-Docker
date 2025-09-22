@@ -7,12 +7,12 @@ services:
     restart: unless-stopped
     tty: true
     ports:
-      - "33066:3306"
+      - "3306:3306"
     volumes:
       - ./mysql/data-84:/var/lib/mysql
       - ./mysql/my.cnf:/etc/my.cnf
     environment:
-      MYSQL_ROOT_PASSWORD: "@@@ABC12abc"
+      MYSQL_ROOT_PASSWORD: "@ABC12abc"
       SERVICE_TAGS: kpa_db84
       SERVICE_NAME: mysql84
 
@@ -22,7 +22,7 @@ services:
     restart: unless-stopped
     tty: true
     ports:
-      - "3306:3306"
+      - "33060:3306"
     volumes:
       - ./mysql/data:/var/lib/mysql
       - ./mysql/my.cnf:/etc/my.cnf
