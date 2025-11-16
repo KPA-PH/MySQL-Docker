@@ -30,3 +30,16 @@ services:
       MYSQL_ROOT_PASSWORD: "@ABC12abc"
       SERVICE_TAGS: kpa_db
       SERVICE_NAME: mysql
+
+  valkey:
+    image: valkey/valkey:latest
+    container_name: valkey
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: ["valkey-server", "/etc/valkey/valkey.conf"]
+    volumes:
+      - ./valkey/data:/data
+      - ./valkey/valkey.conf:/etc/valkey/valkey.conf
+    environment:
+      - TZ=Asia/Manila
