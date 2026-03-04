@@ -40,6 +40,10 @@ services:
     command: ["valkey-server", "/etc/valkey/valkey.conf"]
     volumes:
       - ./valkey/data:/data
-      - ./valkey/valkey.conf:/etc/valkey/valkey.conf
+      - ./valkey/valkey.conf:/etc/valkey/valkey.conf:ro
     environment:
       - TZ=Asia/Manila
+    deploy:
+      resources:
+        limits:
+          memory: 1G
