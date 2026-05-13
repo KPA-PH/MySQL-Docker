@@ -1,49 +1,132 @@
 
-services:
+name: kpa-datastores
 
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+
+x-restart-policy: &restart-policy
+  restart: unless-stopped
+  stop_grace_period: 60s
+
+services:
   mysql84:
+    <<: *restart-policy
     image: mysql:8.4
     container_name: mysql84
-    restart: unless-stopped
-    tty: true
     ports:
-      - "3306:3306"
+      - "${MYSQL84_BIND_ADDRESS:-127.0.0.1}:${MYSQL84_PORT:-3306}:3306"
     volumes:
       - ./mysql/data-84:/var/lib/mysql
-      - ./mysql/my.cnf:/etc/my.cnf
+      - ./mysql/my.cnf:/etc/mysql/conf.d/production.cnf:ro
     environment:
-      MYSQL_ROOT_PASSWORD: "@ABC12abc"
+      MYSQL_ROOT_PASSWORD: ${MYSQL84_ROOT_PASSWORD:?Set MYSQL84_ROOT_PASSWORD in .env}
+      TZ: ${TZ:-Asia/Manila}
       SERVICE_TAGS: kpa_db84
       SERVICE_NAME: mysql84
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 --silent"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    logging: *default-logging
+    networks:
+      - datastore
 
   mysql80:
+    <<: *restart-policy
     image: mysql:8.0
     container_name: mysql80
-    restart: unless-stopped
-    tty: true
     ports:
-      - "33060:3306"
+      - "${MYSQL80_BIND_ADDRESS:-127.0.0.1}:${MYSQL80_PORT:-33060}:3306"
     volumes:
       - ./mysql/data:/var/lib/mysql
-      - ./mysql/my.cnf:/etc/my.cnf
+      - ./mysql/my.cnf:/etc/mysql/conf.d/production.cnf:ro
     environment:
-      MYSQL_ROOT_PASSWORD: "@ABC12abc"
+      MYSQL_ROOT_PASSWORD: ${MYSQL80_ROOT_PASSWORD:?Set MYSQL80_ROOT_PASSWORD in .env}
+      TZ: ${TZ:-Asia/Manila}
       SERVICE_TAGS: kpa_db
-      SERVICE_NAME: mysql
+      SERVICE_NAME: mysql80
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 --silent"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    logging: *default-logging
+    networks:
+      - datastore
+
+  postgresql18:
+    <<: *restart-policy
+    image: postgres:18-bookworm
+    container_name: postgresql18
+    ports:
+      - "${POSTGRES18_BIND_ADDRESS:-127.0.0.1}:${POSTGRES18_PORT:-5432}:5432"
+    volumes:
+      - ./postgresql/data-18:/var/lib/postgresql
+    environment:
+      POSTGRES_DB: ${POSTGRES18_DB:-app}
+      POSTGRES_USER: ${POSTGRES18_USER:-app}
+      POSTGRES_PASSWORD: ${POSTGRES18_PASSWORD:?Set POSTGRES18_PASSWORD in .env}
+      POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256 --encoding=UTF8 --locale=C.UTF-8"
+      PGDATA: /var/lib/postgresql/18/docker
+      TZ: ${TZ:-Asia/Manila}
+    command:
+      - postgres
+      - -c
+      - password_encryption=scram-sha-256
+      - -c
+      - max_connections=${POSTGRES18_MAX_CONNECTIONS:-100}
+      - -c
+      - shared_buffers=${POSTGRES18_SHARED_BUFFERS:-256MB}
+      - -c
+      - effective_cache_size=${POSTGRES18_EFFECTIVE_CACHE_SIZE:-768MB}
+      - -c
+      - log_min_duration_statement=${POSTGRES18_LOG_MIN_DURATION_STATEMENT:-1000}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    logging: *default-logging
+    networks:
+      - datastore
 
   valkey:
-    image: valkey/valkey:latest
+    <<: *restart-policy
+    image: valkey/valkey:9.0-trixie
     container_name: valkey
-    restart: unless-stopped
     ports:
-      - "6379:6379"
-    command: ["valkey-server", "/etc/valkey/valkey.conf"]
+      - "${VALKEY_BIND_ADDRESS:-127.0.0.1}:${VALKEY_PORT:-6379}:6379"
+    command:
+      - sh
+      - -c
+      - umask 077; printf 'user default on >%s ~* &* +@all\n' "$$VALKEY_PASSWORD" > /data/users.acl; exec valkey-server /etc/valkey/valkey.conf --aclfile /data/users.acl
     volumes:
       - ./valkey/data:/data
       - ./valkey/valkey.conf:/etc/valkey/valkey.conf:ro
     environment:
-      - TZ=Asia/Manila
+      VALKEY_PASSWORD: ${VALKEY_PASSWORD:?Set VALKEY_PASSWORD in .env}
+      TZ: ${TZ:-Asia/Manila}
+    healthcheck:
+      test: ["CMD-SHELL", "VALKEYCLI_AUTH=\"$${VALKEY_PASSWORD}\" valkey-cli ping | grep -q PONG"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 10s
+    logging: *default-logging
+    networks:
+      - datastore
     deploy:
       resources:
         limits:
           memory: 1G
+
+networks:
+  datastore:
+    driver: bridge
