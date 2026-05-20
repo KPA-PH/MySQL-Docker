@@ -1,6 +1,6 @@
 # KPA Datastores
 
-Docker Compose stack for MySQL 8.4, MySQL 8.0, PostgreSQL 18, and Valkey.
+Docker Compose stack for MySQL 8.4, PostgreSQL 18, and Valkey.
 
 ## Setup
 
@@ -18,7 +18,6 @@ By default, ports are bound to `127.0.0.1` only:
 | Service | Container port | Host port |
 | --- | ---: | ---: |
 | MySQL 8.4 | 3306 | 3306 |
-| MySQL 8.0 | 3306 | 33060 |
 | PostgreSQL 18 | 5432 | 5432 |
 | Valkey | 6379 | 6379 |
 
@@ -29,7 +28,6 @@ Set `*_BIND_ADDRESS=0.0.0.0` only when the host firewall and network access rule
 Runtime data is stored in ignored bind-mounted directories:
 
 - `mysql/data-84`
-- `mysql/data`
 - `postgresql/data-18`
 - `valkey/data`
 
