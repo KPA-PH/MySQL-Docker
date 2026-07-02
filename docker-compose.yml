@@ -40,6 +40,9 @@ services:
     <<: *restart-policy
     image: postgres:18-bookworm
     container_name: postgresql18
+    security_opt:
+      - no-new-privileges:true
+    shm_size: ${POSTGRES18_SHM_SIZE:-512mb}
     ports:
       - "${POSTGRES18_BIND_ADDRESS:-127.0.0.1}:${POSTGRES18_PORT:-5432}:5432"
     volumes:
@@ -58,9 +61,27 @@ services:
       - -c
       - max_connections=${POSTGRES18_MAX_CONNECTIONS:-100}
       - -c
-      - shared_buffers=${POSTGRES18_SHARED_BUFFERS:-256MB}
+      - shared_buffers=${POSTGRES18_SHARED_BUFFERS:-1536MB}
       - -c
-      - effective_cache_size=${POSTGRES18_EFFECTIVE_CACHE_SIZE:-768MB}
+      - effective_cache_size=${POSTGRES18_EFFECTIVE_CACHE_SIZE:-4GB}
+      - -c
+      - work_mem=${POSTGRES18_WORK_MEM:-16MB}
+      - -c
+      - maintenance_work_mem=${POSTGRES18_MAINTENANCE_WORK_MEM:-256MB}
+      - -c
+      - max_worker_processes=${POSTGRES18_MAX_WORKER_PROCESSES:-4}
+      - -c
+      - max_parallel_workers=${POSTGRES18_MAX_PARALLEL_WORKERS:-2}
+      - -c
+      - max_parallel_workers_per_gather=${POSTGRES18_MAX_PARALLEL_WORKERS_PER_GATHER:-2}
+      - -c
+      - wal_buffers=${POSTGRES18_WAL_BUFFERS:-16MB}
+      - -c
+      - min_wal_size=${POSTGRES18_MIN_WAL_SIZE:-1GB}
+      - -c
+      - max_wal_size=${POSTGRES18_MAX_WAL_SIZE:-4GB}
+      - -c
+      - checkpoint_completion_target=${POSTGRES18_CHECKPOINT_COMPLETION_TARGET:-0.9}
       - -c
       - log_min_duration_statement=${POSTGRES18_LOG_MIN_DURATION_STATEMENT:-1000}
     healthcheck:
@@ -70,38 +91,15 @@ services:
       retries: 5
       start_period: 30s
     logging: *default-logging
-    networks:
-      - datastore
-
-  valkey:
-    <<: *restart-policy
-    image: valkey/valkey:9.0-trixie
-    container_name: valkey
-    ports:
-      - "${VALKEY_BIND_ADDRESS:-127.0.0.1}:${VALKEY_PORT:-6379}:6379"
-    command:
-      - sh
-      - -c
-      - umask 077; printf 'user default on >%s ~* &* +@all\n' "$$VALKEY_PASSWORD" > /data/users.acl; exec valkey-server /etc/valkey/valkey.conf --aclfile /data/users.acl
-    volumes:
-      - ./valkey/data:/data
-      - ./valkey/valkey.conf:/etc/valkey/valkey.conf:ro
-    environment:
-      VALKEY_PASSWORD: ${VALKEY_PASSWORD:?Set VALKEY_PASSWORD in .env}
-      TZ: ${TZ:-Asia/Manila}
-    healthcheck:
-      test: ["CMD-SHELL", "VALKEYCLI_AUTH=\"$${VALKEY_PASSWORD}\" valkey-cli ping | grep -q PONG"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 10s
-    logging: *default-logging
-    networks:
-      - datastore
     deploy:
       resources:
         limits:
-          memory: 1G
+          cpus: ${POSTGRES18_CPU_LIMIT:-2}
+          memory: ${POSTGRES18_MEMORY_LIMIT:-6g}
+        reservations:
+          memory: ${POSTGRES18_MEMORY_RESERVATION:-1g}
+    networks:
+      - datastore
 
 networks:
   datastore:
