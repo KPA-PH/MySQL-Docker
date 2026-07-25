@@ -38,7 +38,7 @@ services:
 
   valkey9:
     <<: *restart-policy
-    image: valkey/valkey:stable
+    image: valkey/valkey:9-alpine
     container_name: valkey9
     ports:
       - "${VALKEY9_BIND_ADDRESS:-127.0.0.1}:${VALKEY9_PORT:-6379}:6379"
