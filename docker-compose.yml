@@ -33,6 +33,7 @@ services:
     <<: *restart-policy
     image: valkey/valkey:9-alpine
     container_name: valkey9
+    mem_limit: ${VALKEY9_MEMORY_LIMIT:-12g}
     ports:
       - "${VALKEY9_BIND_ADDRESS:-127.0.0.1}:${VALKEY9_PORT:-6379}:6379"
     volumes:

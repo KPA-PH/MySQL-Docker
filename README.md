@@ -1,6 +1,6 @@
 # KPA Datastores
 
-Docker Compose stack for MySQL 8.4 and PostgreSQL 18.
+Docker Compose stack for Valkey 9 and the Socket.IO service.
 
 ## Setup
 
@@ -11,23 +11,33 @@ Copy-Item .env.example .env
 docker compose up -d
 ```
 
-For MySQL and PostgreSQL, image password variables initialize only an empty data directory. Existing database directories keep their current users and passwords.
-
-By default, ports are bound to `127.0.0.1` only:
+Without a bind-address override, Valkey is published on `127.0.0.1` only.
+The provided `.env.example` uses `0.0.0.0` for firewall-allowlisted server
+deployments:
 
 | Service | Container port | Host port |
 | --- | ---: | ---: |
-| MySQL 8.4 | 3306 | 3306 |
-| PostgreSQL 18 | 5432 | 5432 |
+| Valkey 9 | 6379 | 6379 |
+| Socket.IO | 11203 | 11203 |
 
-Set `*_BIND_ADDRESS=0.0.0.0` only when the host firewall and network access rules are already locked down.
+Use `VALKEY9_BIND_ADDRESS=0.0.0.0` only when the host firewall and network
+access rules are already locked down.
+
+## Valkey memory
+
+Valkey is configured as a cache with a 10 GB `maxmemory` ceiling and the
+`allkeys-lfu` eviction policy. The container is limited to 12 GB by default,
+leaving headroom for Valkey overhead and the host operating system on a 16 GB
+server.
+
+Set `VALKEY9_MEMORY_LIMIT` in `.env` to change the container limit. Keep the
+container limit above Valkey's `maxmemory` setting.
 
 ## Data
 
 Runtime data is stored in ignored bind-mounted directories:
 
-- `mysql/data-84`
-- `postgresql/data-18`
+- `valkey/data`
 
 Back up these directories, or use database-native backups, before image upgrades or configuration changes.
 
