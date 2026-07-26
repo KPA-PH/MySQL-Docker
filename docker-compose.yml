@@ -12,29 +12,22 @@ x-restart-policy: &restart-policy
   stop_grace_period: 60s
 
 services:
-  mysql84:
-    <<: *restart-policy
-    image: mysql:8.4
-    container_name: mysql84
+
+  msg4wrdsocketio:
+    image: ukayra/msg4wrdsocketio:v2.1.1
+    container_name: msg4wrdsocketio
     ports:
-      - "${MYSQL84_BIND_ADDRESS:-127.0.0.1}:${MYSQL84_PORT:-3306}:3306"
-    volumes:
-      - ./mysql/data-84:/var/lib/mysql
-      - ./mysql/my.cnf:/etc/mysql/conf.d/production.cnf:ro
+      - "11203:11203"
+    restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL84_ROOT_PASSWORD:?Set MYSQL84_ROOT_PASSWORD in .env}
-      TZ: ${TZ:-Asia/Manila}
-      SERVICE_TAGS: kpa_db84
-      SERVICE_NAME: mysql84
-    healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 --silent"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 60s
-    logging: *default-logging
-    networks:
-      - datastore
+      SECRET_KEY: ONegCZ9A0il94muzmL1kL6vOYg9sAo81
+      FLASK_DEBUG: "false"
+      FLASK_HOST: 0.0.0.0
+      FLASK_PORT: "11203"
+      LOG_LEVEL: info
+      LOG_FILE: /app/logs/app.log
+      GUNICORN_WORKERS: "1"
+      GUNICORN_WORKER_CLASS: eventlet
 
   valkey9:
     <<: *restart-policy
